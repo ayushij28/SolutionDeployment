@@ -1,0 +1,140 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "cr738_sharedsharepointonline_15d25"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "48f3819c-eee1-4c82-9b49-d4e62f20c80d"
+          },
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text_1": {
+                  "title": "Email",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                },
+                "text_2": {
+                  "title": "SiteURL",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                }
+              },
+              "required": [
+                "text_1",
+                "text_2"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Send_an_HTTP_request_to_SharePoint": {
+          "runAfter": {
+            "Compose": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "8bf54dc3-b7a9-49e3-8a84-e8afef6fba6b"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "HttpRequest"
+            },
+            "parameters": {
+              "dataset": "@triggerBody()['text_2']",
+              "parameters/method": "POST",
+              "parameters/uri": "_api/web/getuserbyid(@{outputs('Compose')})",
+              "parameters/headers": {
+                "content-type": "application/json;odata=verbose",
+                "accept": "application/json;odata=verbose",
+                "X-HTTP-Method": "MERGE"
+              },
+              "parameters/body": "{\n\t'__metadata': {\n\t\t'type': 'SP.User'\n\t},\n\t'IsSiteAdmin': true\n}"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          }
+        },
+        "HTTP_-_EnsureUser": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "dce72284-e148-412b-8212-db328010f669"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+              "connectionName": "shared_sharepointonline",
+              "operationId": "HttpRequest"
+            },
+            "parameters": {
+              "dataset": "@triggerBody()['text_2']",
+              "parameters/method": "POST",
+              "parameters/uri": "_api/web/ensureuser",
+              "parameters/headers": {
+                "content-type": "application/json;odata=verbose",
+                "accept": "application/json;odata=verbose"
+              },
+              "parameters/body": "{\n\t'logonName': '@{triggerBody()['text_1']}'\n}"
+            },
+            "authentication": {
+              "value": "@json(decodeBase64(triggerOutputs().headers['X-MS-APIM-Tokens']))['$ConnectionKey']",
+              "type": "Raw"
+            }
+          }
+        },
+        "Compose": {
+          "runAfter": {
+            "HTTP_-_EnsureUser": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "146d104c-0173-4f87-a148-a10c2c90b8b6"
+          },
+          "type": "Compose",
+          "inputs": "@body('HTTP_-_EnsureUser')?['d']?['Id']"
+        }
+      }
+    },
+    "templateName": null
+  },
+  "schemaVersion": "1.0.0.0"
+}

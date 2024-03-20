@@ -1,0 +1,167 @@
+{
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": {
+        "runtimeSource": "invoker",
+        "connection": {
+          "connectionReferenceLogicalName": "cr738_sharedsharepointonline_15d25"
+        },
+        "api": {
+          "name": "shared_sharepointonline"
+        }
+      }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": {
+          "defaultValue": {},
+          "type": "Object"
+        },
+        "$authentication": {
+          "defaultValue": {},
+          "type": "SecureObject"
+        }
+      },
+      "triggers": {
+        "manual": {
+          "metadata": {
+            "operationMetadataId": "bfc84a3f-7999-43ed-8eae-ffec79e59fe2"
+          },
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "title": "SiteURL",
+                  "type": "string",
+                  "x-ms-dynamically-added": true,
+                  "description": "Please enter your input",
+                  "x-ms-content-hint": "TEXT"
+                }
+              },
+              "required": [
+                "text"
+              ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Send_an_HTTP_request_to_SharePoint": {
+          "runAfter": {},
+          "metadata": {
+            "operationMetadataId": "8c0e30e6-022e-4b70-9fe1-634930787747"
+          },
+          "type": "OpenApiConnection",
+          "inputs": {
+            "host": {
+              "connectionName": "shared_sharepointonline",
+              "operationId": "HttpRequest",
+              "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline"
+            },
+            "parameters": {
+              "dataset": "@triggerBody()['text']",
+              "parameters/method": "GET",
+              "parameters/uri": "/_api/web/siteusers?$filter=IsSiteAdmin eq true",
+              "parameters/headers": {
+                "accept": "application/json;odata=verbose"
+              }
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Compose": {
+          "runAfter": {
+            "Send_an_HTTP_request_to_SharePoint": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "7150a65e-bc26-4314-9a9d-038a11194475"
+          },
+          "type": "Compose",
+          "inputs": "@outputs('Send_an_HTTP_request_to_SharePoint')?['body']?['d']?['Results']"
+        },
+        "Select": {
+          "runAfter": {
+            "Compose": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "b068f9ac-bcaf-4451-8ba3-46a1b69c70ad"
+          },
+          "type": "Select",
+          "inputs": {
+            "from": "@outputs('Compose')",
+            "select": {
+              "Users": "@item()?['Title']",
+              "Email": "@item()?['Email']"
+            }
+          }
+        },
+        "Respond_to_a_PowerApp_or_flow": {
+          "runAfter": {
+            "Compose_2": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "d5b1cfaa-192b-43b3-aad2-5301999913ac"
+          },
+          "type": "Response",
+          "kind": "PowerApp",
+          "inputs": {
+            "statusCode": 200,
+            "body": {
+              "data": "@{outputs('Compose_2')}"
+            },
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "title": "Data",
+                  "x-ms-dynamically-added": true,
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "Create_HTML_table": {
+          "runAfter": {
+            "Select": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "5bd46d7c-4641-4b31-b3c5-e186f1b9f882"
+          },
+          "type": "Table",
+          "inputs": {
+            "from": "@body('Select')",
+            "format": "HTML"
+          }
+        },
+        "Compose_2": {
+          "runAfter": {
+            "Create_HTML_table": [
+              "Succeeded"
+            ]
+          },
+          "metadata": {
+            "operationMetadataId": "f8fff82b-ab12-4f5a-8478-614d044bc058"
+          },
+          "type": "Compose",
+          "inputs": "<!DOCTYPE html><html><head><style>table {  font-family: Arial, Helvetica, sans-serif;  border-collapse: collapse;  width: 100%;}table td, table th {  border: 1px solid #ddd;  padding: 8px;}table tbody td {  font-size: 13px;}table tr:nth-child(even){background-color: #f2f2f2;}table tr:hover {background-color: #ddd;}table thead th {  padding-top: 12px;  padding-bottom: 12px;  text-align: left;  background-color: #afbfe0;  color: black;}</style></head><body>@{body('Create_HTML_table')}</body></html>"
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}
