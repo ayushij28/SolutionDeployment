@@ -12,7 +12,7 @@ on:
       solution_name:
         description: 'The solution name.'
         type: string
-        default: GithubTest       
+        default: Ballard_SCAUserManagment       
       solution_shipping_folder:
         description: 'folder name for staging the exported solution *do not change*'        
         type: string
