@@ -1,0 +1,22 @@
+name: Release action
+# Call the reusable workflow release-solution-with-inputs.yml
+# Release your solution to prod when you create a new release.
+
+on:
+  release:
+      types: [created]        
+permissions:
+  contents: write
+jobs:
+  Release-solution-ALMLab:
+    uses: ./.github/workflows/release-solution-to-prod-with-inputs.yml
+    with:
+      #You can specify the solution name here
+      solution_name: Ballard_SCAUserManagment
+      #Update your values here
+      BUILD_ENVIRONMENT_URL: https://org80c0c729.crm8.dynamics.com/
+      PRODUCTION_ENVIRONMENT_URL: https://org5fb7f156.crm8.dynamics.com/
+      CLIENT_ID: ae393b69-14a9-4076-b470-4be8182aad41
+      TENANT_ID: 5bac9eb0-1e6b-463d-8dbb-6ba2477914b9      
+    secrets:
+      envSecret: ${{ secrets.PowerPlatformSPN }}
